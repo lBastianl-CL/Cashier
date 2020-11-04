@@ -59,7 +59,9 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Caja.cs" />
+    <Compile Include="Caja.cs">
+      <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
+    </Compile>
     <Compile Include="Cliente.cs" />
     <Compile Include="Mercaderia.cs" />
     <Compile Include="Program.cs" />
