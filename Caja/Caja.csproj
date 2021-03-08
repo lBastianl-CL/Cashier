@@ -63,6 +63,7 @@
       <ExcludeFromStyleCop>True</ExcludeFromStyleCop>
     </Compile>
     <Compile Include="Cliente.cs" />
+    <Compile Include="CRUD BASE DE DATOS\EMongo.cs" />
     <Compile Include="Mercaderia.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

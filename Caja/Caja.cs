@@ -30,7 +30,7 @@
                 Console.WriteLine("----- ATENCION -------");
                 var primerCliente = this.Clientes.Dequeue();
                 Console.WriteLine("Cliente: " + primerCliente.Nombre);
-                Console.WriteLine("RUT: " + primerCliente.RUT);
+                Console.WriteLine("RUT: " + primerCliente.Id);
                 decimal suma = 0;
                 foreach (var mercaderia in primerCliente.Mercaderias)
                 {
@@ -45,7 +45,7 @@
             }
         }
 
-        public void LoadClientData(List<string> lineasClientes, List<string> lineasMercaderias)
+        public void CargarDatosClientes(List<string> lineasClientes, List<string> lineasMercaderias)
         {
             for (int i = 1; i < lineasClientes.Count; i++)
 
@@ -53,7 +53,7 @@
                 var lineaCliente = lineasClientes[i];
                 Cliente cliente = new Cliente
                 {
-                    RUT = int.Parse(lineaCliente.Split(',')[0]),
+                    Id = int.Parse(lineaCliente.Split(',')[0]),
                     Nombre = lineaCliente.Split(',')[1]
                 };
                 this.Clientes.Enqueue(cliente);
@@ -61,7 +61,7 @@
                 {
                     using (SqlConnection conn = new SqlConnection(this.connString))
                     {
-                        string query = @"INSERT INTO client(id, first_name) values('"+cliente.RUT +"','"+cliente.Nombre+"');";
+                        string query = @"INSERT INTO client(id, first_name) values('"+cliente.Id +"','"+cliente.Nombre+"');";
                         SqlCommand cmd = new SqlCommand(query, conn);
                         conn.Open();
                         SqlDataReader dr = cmd.ExecuteReader();
@@ -105,7 +105,7 @@
 
                 foreach (var cliente in this.Clientes)
                 {
-                    if (cliente.RUT == clienteDeEstaMercaderia)
+                    if (cliente.Id == clienteDeEstaMercaderia)
                     {
                         cliente.Mercaderias.Add(mercaderia);
                     }
@@ -113,7 +113,7 @@
             }
         }
 
-        public void Update_price(int product_id, decimal product_price)
+        public void Actualizar_Precio(int product_id, decimal product_price)
         {
             try
             {
@@ -133,7 +133,7 @@
             }
         }
 
-        public void Remove_product(int product_id)
+        public void Remover_Producto(int product_id)
         {
             try
             {
@@ -153,7 +153,7 @@
             }
         }
 
-        public void Insert_Product(int product_id, string product_name, int client_id, decimal product_price)
+        public void Insertar_Producto(int product_id, string product_name, int client_id, decimal product_price)
         {
             try
             {
@@ -174,7 +174,7 @@
             }
         }
         
-        public void LoadClientDataMongoDB(List<string> lineasClientes, List<string> lineasMercaderias)
+        public void CargarDatosClientesMongoDB(List<string> lineasClientes, List<string> lineasMercaderias)
         {
             var contador = 0;
             for (int i = 1; i < lineasClientes.Count; i++)
@@ -182,20 +182,15 @@
                 var lineaCliente = lineasClientes[i];
                 var cliente = new Cliente
                 {
-                    RUT = int.Parse(lineaCliente.Split(',')[0]),
+                    Id = int.Parse(lineaCliente.Split(',')[0]),
                     Nombre = lineaCliente.Split(',')[1]
                 };
                 this.Clientes.Enqueue(cliente);
                 try
                 {
-                    var db = this.client.GetDatabase("caja");
-                    var collect = db.GetCollection<BsonDocument>("client");
-                    var info = new BsonDocument
-                    {
-                        { "_id", cliente.RUT },
-                        { "first_name", cliente.Nombre }
-                    };
-                    collect.InsertOneAsync(info);
+                    var db = this.client.GetDatabase("Caja");
+                    var collection = db.GetCollection<Cliente>("cliente");
+                    collection.InsertOneAsync(new Cliente { Id = cliente.Id, Nombre = cliente.Nombre });
                     contador++;
                     Console.WriteLine(contador);
                 }
@@ -211,23 +206,17 @@
 
                 var lineaMercaderia = lineasMercaderias[i];
                 var lineaSeparadaPorComillas = lineaMercaderia.Split(',');
-                int product_id = int.Parse(lineaSeparadaPorComillas[0]);
+                int producto_id = int.Parse(lineaSeparadaPorComillas[0]);
                 mercaderia.Nombre = lineaSeparadaPorComillas[1];
                 mercaderia.Precio = decimal.Parse(lineaSeparadaPorComillas[3].Split('$')[1].Replace(".", ","));
                 var clienteDeEstaMercaderia = int.Parse(lineaSeparadaPorComillas[2]);
                 try
                 {
-                    var db = this.client.GetDatabase("caja");
-                    var collect = db.GetCollection<BsonDocument>("products");
-                    var info = new BsonDocument
-                    {
-                        { "_id", product_id },
-                        { "product_name", mercaderia.Nombre },
-                        { "client_id", clienteDeEstaMercaderia },
-                        { "product_price", mercaderia.Precio }
-                    };
-                    collect.InsertOneAsync(info);
+                    var db = this.client.GetDatabase("Caja");
+                    var collection = db.GetCollection<Mercaderia>("producto");
+                    collection.InsertOneAsync(new Mercaderia { Id = producto_id, Nombre = mercaderia.Nombre, Precio = mercaderia.Precio });
                 }
+                
                 catch (Exception ex)
                 {
                     Console.WriteLine("Exception: " + ex.Message);
@@ -235,7 +224,7 @@
 
                 foreach (var cliente in this.Clientes)
                 {
-                    if (cliente.RUT == clienteDeEstaMercaderia)
+                    if (cliente.Id == clienteDeEstaMercaderia)
                     {
                         cliente.Mercaderias.Add(mercaderia);
                     }                       
@@ -243,34 +232,30 @@
             }
         }
 
-        public async Task Update_Info_Client_MongoAsync(string name_actual, string name_new)
+        public void Actualizar_Nombre_Cliente_MongoDB(string nombre_actual, string nombre_nuevo)
         {
-            var db = this.client.GetDatabase("caja");
-            var collection = db.GetCollection<BsonDocument>("client");
-            var result = await collection.FindOneAndUpdateAsync(Builders<BsonDocument>.Filter.Eq("first_name", name_actual), Builders<BsonDocument>.Update.Set("first_name", name_new));
-            await collection.Find(new BsonDocument()).ForEachAsync(x => Console.WriteLine(x));
+            var db = this.client.GetDatabase("Caja");
+            var collection_cliente = db.GetCollection<Cliente>("cliente");
+            var buscar_nombre_actual = Builders<Cliente>.Filter.Eq("Nombre", nombre_actual);
+            collection_cliente.UpdateOneAsync(buscar_nombre_actual,nombre_actual);
+            
+            
         }
 
-        public void Delete_Values_MongoDB(int product_id)
+        public void Eliminar_Producto_MongoDB(int id_producto)
         {
-            var db = this.client.GetDatabase("caja");
-            var collection = db.GetCollection<BsonDocument>("products");
-            var delete = Builders<BsonDocument>.Filter.Eq("_id", product_id);
-            collection.DeleteOne(delete);
+            var db = this.client.GetDatabase("Caja");
+            var collection_producto = db.GetCollection<Mercaderia>("producto");
+            var borrar_producto = Builders<Mercaderia>.Filter.Eq("_id", id_producto);
+            collection_producto.DeleteOne(borrar_producto);
         }
 
-        public void Insert_Values_MongoDB(int product_id, string product_name, int client_id, decimal product_price)
+        public void Insertar_Producto_MongoDB(int id_producto, string nombre_producto, decimal precio_producto)
         {
-            var db = this.client.GetDatabase("caja");
-            var collect = db.GetCollection<BsonDocument>("products");
-            var info = new BsonDocument
-            {
-                { "_id", product_id },
-                { "product_name", product_name },
-                { "client_id", client_id },
-                { "product_price", product_price }       
-            };
-            collect.InsertOneAsync(info);
+            var db = this.client.GetDatabase("Caja");
+            var collection_producto = db.GetCollection<Mercaderia>("producto");
+            collection_producto.InsertOneAsync(new Mercaderia { Id= id_producto, Nombre = nombre_producto, Precio = precio_producto });
         }
     }
+
 }
