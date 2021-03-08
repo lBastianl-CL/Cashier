@@ -237,7 +237,7 @@
             var db = this.client.GetDatabase("Caja");
             var collection_cliente = db.GetCollection<Cliente>("cliente");
             var buscar_nombre_actual = Builders<Cliente>.Filter.Eq("Nombre", nombre_actual);
-            collection_cliente.UpdateOneAsync(buscar_nombre_actual,nombre_actual);
+            collection_cliente.UpdateOneAsync(buscar_nombre_actual,nombre_nuevo);
             
             
         }
